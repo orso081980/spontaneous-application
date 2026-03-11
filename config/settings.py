@@ -30,6 +30,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-**86p*ja#(ubly3ay99^$%hb8w
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
+
 ALLOWED_HOSTS = ['*']
 
 
