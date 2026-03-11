@@ -1,0 +1,272 @@
+{% extends 'frontend/base.html' %}
+{% load company_filters %}
+
+{% block title %}Home - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div id="app">
+<div class="text-center mb-12">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">
+        Welcome to Spontaneous Job Board
+    </h1>
+    <p class="text-xl text-gray-600 mb-8">
+        Connect with companies and suggest improvements to their products
+    </p>
+    {% if not user.is_authenticated %}
+    <div class="space-x-4">
+        <a href="{% url 'frontend:register' %}"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-3 rounded-md text-lg font-medium">
+            Get Started
+        </a>
+        <a href="{% url 'frontend:company_list' %}"
+            class="bg-gray-200 text-gray-900 hover:bg-gray-300 px-6 py-3 rounded-md text-lg font-medium">
+            Browse Companies
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if user.is_authenticated %}
+<!-- Filters Section -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-8">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Companies</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Search by name -->
+        <div>
+            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search by name</label>
+            <input type="text" 
+                   v-model="searchQuery"
+                   placeholder="Type company name..."
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        
+        <!-- Filter by country -->
+        <div>
+            <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Filter by country</label>
+            <select v-model="selectedCountry"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">All Countries</option>
+                <option v-for="country in countries" :key="country.name" :value="country.name">{% verbatim %}{{ country.flag }} {{ country.name }}{% endverbatim %}</option>
+            </select>
+        </div>
+        
+        <!-- Filter by application status -->
+        <div>
+            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Filter by application status</label>
+            <select v-model="selectedStatus"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">All Statuses</option>
+                <option value="not-applied">Not Applied</option>
+                <option value="created">Created</option>
+                <option value="sent">Sent</option>
+                <option value="interview">Interview</option>
+                <option value="accepted">Accepted</option>
+                <option value="refused">Refused</option>
+            </select>
+        </div>
+    </div>
+    <div class="mt-4 flex justify-between items-center">
+        <p class="text-sm text-gray-600">Showing {% verbatim %}{{ filteredCompanies.length }}{% endverbatim %} of {% verbatim %}{{ allCompanies.length }}{% endverbatim %} companies</p>
+        <button @click="clearFilters" type="button" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Clear Filters</button>
+    </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <template v-for="company in filteredCompanies" :key="company.id">
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <div v-if="company.logo_url" class="mb-4 flex justify-left">
+                <a :href="company.website" target="_blank" class="block">
+                    <img :src="company.logo_url" :alt="company.name + ' logo'"
+                        class="h-[60px] max-w-full object-contain rounded" style="background-color: rgba(0, 0, 0, 0.03);">
+                </a>
+            </div>
+            
+            <div class="text-left mb-4">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">{% verbatim %}{{ company.name }}{% endverbatim %}</h3>
+                <p class="text-gray-600 mb-2">{% verbatim %}{{ company.field }}{% endverbatim %}</p>
+
+                <p v-if="company.address" class="text-sm text-gray-500 mb-2">
+                    <i class="fas fa-map-marker-alt mr-1"></i>{% verbatim %}{{ company.country_flag }} {{ company.address }}{% endverbatim %}
+                </p>
+
+                <!-- Technologies -->
+                <div v-if="company.technologies" class="flex flex-wrap gap-2 justify-left mb-3">
+                    <template v-for="tech in splitTechnologies(company.technologies)">
+                        <span v-if="getTechIcon(tech)" class="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700 relative group cursor-help" :title="tech">
+                            <img :src="getTechIcon(tech)" :alt="tech" class="w-7 h-7">
+                            <!-- Enhanced tooltip -->
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                {% verbatim %}{{ tech }}{% endverbatim %}
+                            </span>
+                        </span>
+                        <span v-else class="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 font-medium" :title="tech">
+                            {% verbatim %}{{ tech }}{% endverbatim %}
+                        </span>
+                    </template>
+                </div>
+
+                <div v-if="company.potential_improvement" class="mb-8 mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <p class="text-gray-700 leading-relaxed">{% verbatim %}{{ company.potential_improvement }}{% endverbatim %}</p>
+                </div>
+
+                <div v-if="company.has_social" class="flex space-x-2 justify-left mb-4">
+                    <a v-if="company.contact" :href="'mailto:' + company.contact" class="text-gray-500 hover:text-indigo-600 text-sm" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                    <a v-if="company.linkedin_url && company.linkedin_url !== ''" :href="company.linkedin_url" target="_blank" class="text-gray-500 hover:text-blue-700 text-sm" title="LinkedIn">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a v-if="company.facebook_url && company.facebook_url !== ''" :href="company.facebook_url" target="_blank" class="text-gray-500 hover:text-blue-600 text-sm" title="Facebook">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a v-if="company.twitter_url && company.twitter_url !== ''" :href="company.twitter_url" target="_blank" class="text-gray-500 hover:text-sky-500 text-sm" title="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a v-if="company.instagram_url && company.instagram_url !== ''" :href="company.instagram_url" target="_blank" class="text-gray-500 hover:text-pink-600 text-sm" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a v-if="company.youtube_url && company.youtube_url !== ''" :href="company.youtube_url" target="_blank" class="text-gray-500 hover:text-red-600 text-sm" title="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <a :href="'/companies/' + company.id + '/'"
+                    class="text-indigo-600 hover:text-indigo-800 font-medium">
+                    View Details →
+                </a>
+                <span v-if="company.application_status" class="px-3 py-1 rounded-full text-xs font-medium"
+                    :class="{
+                        'bg-gray-100 text-gray-800': company.application_status === 'created',
+                        'bg-blue-100 text-blue-800': company.application_status === 'sent',
+                        'bg-yellow-100 text-yellow-800': company.application_status === 'interview',
+                        'bg-green-100 text-green-800': company.application_status === 'accepted',
+                        'bg-red-100 text-red-800': company.application_status === 'refused'
+                    }">
+                    {% verbatim %}{{ company.application_status === 'interview' ? 'Interview' : company.application_status.charAt(0).toUpperCase() + company.application_status.slice(1) }}{% endverbatim %}
+                </span>
+            </div>
+        </div>
+    </template>
+    
+    {% if not companies %}
+    
+    <div v-if="filteredCompanies.length === 0" class="col-span-3 text-center py-12">
+        <p class="text-gray-500 text-lg">No companies match your filters.</p>
+        <button @click="clearFilters" type="button" class="text-indigo-600 hover:text-indigo-800 font-medium mt-2">
+            Clear Filters
+        </button>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Vue.js 3 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+
+<!-- Shared Technology Icons System -->
+{% include 'frontend/_tech_icons_script.html' %}
+
+<script>
+const { createApp } = Vue;
+
+const companiesData = [
+    {% for company in companies %}
+    {
+        id: '{{ company.id }}',
+        name: '{{ company.name|escapejs }}',
+        field: '{{ company.field|escapejs }}',
+        address: '{{ company.address|escapejs }}',
+        country_flag: '{{ company.address|get_country_flag }}',
+        logo_url: '{{ company.logo_url }}',
+        website: '{{ company.website }}',
+        potential_improvement: '{{ company.potential_improvement|escapejs }}',
+        contact: '{{ company.contact }}',
+        linkedin_url: '{{ company.linkedin_url }}',
+        facebook_url: '{{ company.facebook_url }}',
+        twitter_url: '{{ company.twitter_url }}',
+        instagram_url: '{{ company.instagram_url }}',
+        youtube_url: '{{ company.youtube_url }}',
+        technologies: '{{ company.technologies|escapejs }}',
+        has_social: {% if company.contact or company.linkedin_url or company.facebook_url or company.twitter_url or company.instagram_url or company.youtube_url %}true{% else %}false{% endif %},
+        application_status: {% with user_applications|get_item:company.id as user_app %}{% if user_app %}'{{ user_app.status }}'{% else %}null{% endif %}{% endwith %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+createApp({
+    data() {
+        return {
+            allCompanies: companiesData,
+            searchQuery: '',
+            selectedCountry: '',
+            selectedStatus: ''
+        };
+    },
+    computed: {
+        countries() {
+            const countryMap = new Map();
+            this.allCompanies.forEach(company => {
+                if (company.address && company.country_flag) {
+                    // Extract country from address (last word)
+                    const parts = company.address.split(/\s+/);
+                    if (parts.length > 0) {
+                        const country = parts[parts.length - 1].trim();
+                        if (country) {
+                            countryMap.set(country, {
+                                name: country,
+                                flag: company.country_flag
+                            });
+                        }
+                    }
+                }
+            });
+            return Array.from(countryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        },
+        filteredCompanies() {
+            return this.allCompanies.filter(company => {
+                // Filter by search query
+                if (this.searchQuery && !company.name.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+                    return false;
+                }
+                
+                // Filter by country
+                if (this.selectedCountry) {
+                    const parts = company.address ? company.address.split(/\s+/) : [];
+                    const countryFromAddress = parts.length > 0 ? parts[parts.length - 1].trim() : '';
+                    if (countryFromAddress !== this.selectedCountry) {
+                        return false;
+                    }
+                }
+                
+                // Filter by application status
+                if (this.selectedStatus) {
+                    if (this.selectedStatus === 'not-applied' && company.application_status) {
+                        return false;
+                    }
+                    if (this.selectedStatus !== 'not-applied' && company.application_status !== this.selectedStatus) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        }
+    },
+    methods: {
+        clearFilters() {
+            this.searchQuery = '';
+            this.selectedCountry = '';
+            this.selectedStatus = '';
+        },
+        // Use global functions from shared script
+        splitTechnologies: window.splitTechnologies,
+        getTechIcon: window.getTechIcon
+    }
+}).mount('#app');
+</script>
+{% endblock %}

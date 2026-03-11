@@ -1,0 +1,25 @@
+<!-- Simple Dynamic Technology Icons System -->
+<script>
+window.TechIcons = {
+    availableIcons: [
+        {% for icon_file in available_icons %}
+        '{{ icon_file|escapejs }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    
+    findIcon(techName) {
+        if (!techName) return null;
+        const baseName = techName.toLowerCase().trim().replace(/[\s.-]/g, '-');
+        for (const ext of ['svg', 'png', 'jpg', 'jpeg']) {
+            const fileName = `${baseName}.${ext}`;
+            if (this.availableIcons.includes(fileName)) {
+                return `/static/icons/${fileName}`;
+            }
+        }
+        return null;
+    }
+};
+
+window.splitTechnologies = (s) => s ? s.split(',').map(t => t.trim()).filter(t => t) : [];
+window.getTechIcon = (t) => window.TechIcons.findIcon(t);
+</script>

@@ -1,0 +1,49 @@
+<svg version="1.1" id="Layer_1" xmlns:x="ns_extend;" xmlns:i="ns_ai;" xmlns:graph="ns_graphs;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 34.7 40" style="enable-background:new 0 0 34.7 40;" xml:space="preserve">
+ <style type="text/css">
+  .st0{filter:url(#Adobe_OpacityMaskFilter);}
+	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#FFFFFF;}
+	.st2{mask:url(#mask-2_1_);fill-rule:evenodd;clip-rule:evenodd;fill:url(#Fill-3_1_);}
+ </style>
+ <metadata>
+  <sfw xmlns="ns_sfw;">
+   <slices>
+   </slices>
+   <sliceSourceBounds bottomLeftOrigin="true" height="40" width="34.7" x="0" y="29.9">
+   </sliceSourceBounds>
+  </sfw>
+ </metadata>
+ <g id="Redesign">
+  <g id="Scan" transform="translate(-346.000000, -5165.000000)">
+   <g id="Footer" transform="translate(0.000000, 4863.000000)">
+    <g id="Group" transform="translate(346.000000, 302.000000)">
+     <g id="Group-5">
+      <g id="Clip-4">
+      </g>
+      <defs>
+       <filter id="Adobe_OpacityMaskFilter" filterUnits="userSpaceOnUse" x="0" y="0" width="34.7" height="40">
+        <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0">
+        </feColorMatrix>
+       </filter>
+      </defs>
+      <mask maskUnits="userSpaceOnUse" x="0" y="0" width="34.7" height="40" id="mask-2_1_">
+       <g class="st0">
+        <path id="path-1_1_" class="st1" d="M20.6,21.9l7.1,4.1l-10.3,5.9l-7.1-4.1l-7.1,4.1L17.4,40l17.4-10l0-16.3L20.6,21.9z
+								 M0,26.3V10L17.4,0l14.1,8.1l-7.1,4.1l-7.1-4.1L7.1,14.1l7.1,4.1L0,26.3L0,26.3z">
+        </path>
+       </g>
+      </mask>
+      <linearGradient id="Fill-3_1_" gradientUnits="userSpaceOnUse" x1="-111.8261" y1="246.2429" x2="-111.1384" y2="246.6986" gradientTransform="matrix(34.7009 0 0 -40 3875.6067 9886.6816)">
+       <stop offset="0" style="stop-color:#22415D">
+       </stop>
+       <stop offset="1" style="stop-color:#24BA9E">
+       </stop>
+      </linearGradient>
+      <path id="Fill-3" class="st2" d="M20.6,21.9l7.1,4.1l-10.3,5.9l-7.1-4.1l-7.1,4.1L17.4,40l17.4-10l0-16.3L20.6,21.9z M0,26.3
+						V10L17.4,0l14.1,8.1l-7.1,4.1l-7.1-4.1L7.1,14.1l7.1,4.1L0,26.3L0,26.3z">
+      </path>
+     </g>
+    </g>
+   </g>
+  </g>
+ </g>
+</svg>

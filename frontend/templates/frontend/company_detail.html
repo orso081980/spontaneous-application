@@ -1,0 +1,234 @@
+{% extends 'frontend/base.html' %}
+{% load company_filters %}
+
+{% block title %}{{ company.name }} - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-8">
+    {% if company.logo_url %}
+    <div class="mb-6 overflow-hidden rounded-lg">
+        <img src="{{ company.logo_url }}" alt="{{ company.name }} logo" class="w-[300px] object-cover">
+    </div>
+    {% endif %}
+
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ company.name }}</h1>
+            <p class="text-lg text-gray-600">{{ company.field }}</p>
+        </div>
+        <div class="space-x-2">
+            {% if user.is_staff or user.is_superuser %}
+            <a href="{% url 'frontend:company_edit' company.id %}"
+                class="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded-md font-medium">
+                Edit Company
+            </a>
+            <a href="{% url 'frontend:company_delete' company.id %}"
+                class="bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-md font-medium">
+                Delete Company
+            </a>
+            {% endif %}
+            {% if user.is_authenticated %}
+                {% if user_application %}
+                <a href="{% url 'frontend:my_applications' %}"
+                    class="bg-gray-400 text-white px-4 py-2 rounded-md font-medium cursor-not-allowed">
+                    Already Applied
+                </a>
+                {% else %}
+                <a href="{% url 'frontend:company_apply' company.id %}"
+                    class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md font-medium">
+                    Apply Now
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if company.description %}
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">About the Company</h3>
+        <div class="text-gray-700 leading-relaxed prose max-w-none">{{ company.description|safe }}</div>
+    </div>
+    {% endif %}
+
+    {% if company.potential_improvement %}
+    <div class="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Potential Improvement</h3>
+        <p class="text-gray-700 leading-relaxed">{{ company.potential_improvement }}</p>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {% if company.website %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Website</h3>
+            <a href="{{ company.website }}" target="_blank" class="text-indigo-600 hover:text-indigo-800">
+                {{ company.website }}
+            </a>
+        </div>
+        {% endif %}
+
+        {% if company.contact %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Contact Email</h3>
+            <a href="mailto:{{ company.contact }}" class="text-indigo-600 hover:text-indigo-800 flex items-center">
+                <i class="fas fa-envelope mr-2"></i>{{ company.contact }}
+            </a>
+        </div>
+        {% endif %}
+
+        {% if company.contact_form_url %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Contact Form</h3>
+            <a href="{{ company.contact_form_url }}" target="_blank" class="text-indigo-600 hover:text-indigo-800">
+                Contact us online
+            </a>
+        </div>
+        {% endif %}
+
+        {% if company.phone %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Phone</h3>
+            <a href="tel:{{ company.phone }}" class="text-indigo-600 hover:text-indigo-800">{{ company.phone }}</a>
+        </div>
+        {% endif %}
+
+        {% if company.address %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Address</h3>
+            <p class="text-gray-700">{{ company.address|get_country_flag }} {{ company.address }}</p>
+        </div>
+        {% endif %}
+
+        {% if company.vat_number %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">VAT Number</h3>
+            <p class="text-gray-700">{{ company.vat_number }}</p>
+        </div>
+        {% endif %}
+
+        {% if company.plus_code %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Location (Plus Code)</h3>
+            <p class="text-gray-700">{{ company.plus_code }}</p>
+        </div>
+        {% endif %}
+
+        {% if company.latitude and company.longitude %}
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Coordinates</h3>
+            <p class="text-gray-700">{{ company.latitude }}, {{ company.longitude }}</p>
+        </div>
+        {% endif %}
+
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Posted</h3>
+            <p class="text-gray-700">{{ company.created_at|date:"F d, Y" }}</p>
+        </div>
+    </div>
+
+    <!-- Technologies Section -->
+    {% if company.technologies %}
+    <div class="mb-8 border-t pt-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-code mr-2"></i>Technologies & Stack
+        </h3>
+        <div id="tech-stack-app" class="flex flex-wrap gap-3">
+            <template v-for="tech in technologies">
+                <span v-if="getTechIcon(tech)" 
+                      class="inline-flex items-center space-x-2 bg-gray-100 text-gray-800 px-4 py-2 rounded-lg border border-gray-300 relative group cursor-help"
+                      :title="tech">
+                    <img :src="getTechIcon(tech)" :alt="tech" class="w-5 h-5">
+                    <span class="font-medium">{% verbatim %}{{ tech }}{% endverbatim %}</span>
+                    <!-- Enhanced tooltip for icon hover -->
+                    <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        {% verbatim %}{{ tech }}{% endverbatim %}
+                    </span>
+                </span>
+                <span v-else 
+                      class="inline-flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-medium">
+                    {% verbatim %}{{ tech }}{% endverbatim %}
+                </span>
+            </template>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Social Media Section -->
+    {% if company.linkedin_url or company.facebook_url or company.twitter_url or company.instagram_url or company.youtube_url %}
+    <div class="mb-8 border-t pt-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-share-alt mr-2"></i>Connect with {{ company.name }}
+        </h3>
+        <div class="flex flex-wrap gap-4">
+            {% if company.linkedin_url %}
+            <a href="{{ company.linkedin_url }}" target="_blank" rel="noopener noreferrer"
+                class="flex items-center space-x-2 bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors">
+                <i class="fab fa-linkedin text-xl"></i>
+                <span>LinkedIn</span>
+            </a>
+            {% endif %}
+
+            {% if company.facebook_url %}
+            <a href="{{ company.facebook_url }}" target="_blank" rel="noopener noreferrer"
+                class="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fab fa-facebook text-xl"></i>
+                <span>Facebook</span>
+            </a>
+            {% endif %}
+
+            {% if company.twitter_url %}
+            <a href="{{ company.twitter_url }}" target="_blank" rel="noopener noreferrer"
+                class="flex items-center space-x-2 bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors">
+                <i class="fab fa-twitter text-xl"></i>
+                <span>Twitter</span>
+            </a>
+            {% endif %}
+
+            {% if company.instagram_url %}
+            <a href="{{ company.instagram_url }}" target="_blank" rel="noopener noreferrer"
+                class="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all">
+                <i class="fab fa-instagram text-xl"></i>
+                <span>Instagram</span>
+            </a>
+            {% endif %}
+
+            {% if company.youtube_url %}
+            <a href="{{ company.youtube_url }}" target="_blank" rel="noopener noreferrer"
+                class="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <i class="fab fa-youtube text-xl"></i>
+                <span>YouTube</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="border-t pt-6">
+        <a href="{% url 'frontend:company_list' %}" class="text-indigo-600 hover:text-indigo-800 font-medium">
+            ← Back to Companies
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+{% include 'frontend/_tech_icons_script.html' %}
+
+<script>
+const { createApp } = Vue;
+
+{% if company.technologies %}
+createApp({
+    data() {
+        return {
+            technologies: '{{ company.technologies|escapejs }}'.split(',').map(t => t.trim()).filter(t => t)
+        };
+    },
+    methods: {
+        getTechIcon: window.getTechIcon
+    }
+}).mount('#tech-stack-app');
+{% endif %}
+</script>
+{% endblock %}

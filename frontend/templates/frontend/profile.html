@@ -1,0 +1,76 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Profile - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">My Profile</h1>
+        <div class="space-x-2">
+            <a href="{% url 'frontend:profile_edit' %}"
+                class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md font-medium">
+                {% if profile %}Edit Profile{% else %}Create Profile{% endif %}
+            </a>
+            {% if profile %}
+            <a href="{% url 'frontend:my_applications' %}"
+                class="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded-md font-medium">
+                My Applications
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if profile %}
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Name</h3>
+                <p class="text-gray-700">{{ profile.name }}</p>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Job Position</h3>
+                <p class="text-gray-700">{{ profile.job_position }}</p>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Email</h3>
+                <p class="text-gray-700">{{ profile.email }}</p>
+            </div>
+
+            {% if profile.phone %}
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Phone</h3>
+                <p class="text-gray-700">{{ profile.phone }}</p>
+            </div>
+            {% endif %}
+
+            {% if profile.linkedin %}
+            <div class="md:col-span-2">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">LinkedIn</h3>
+                <a href="{{ profile.linkedin }}" target="_blank"
+                    class="text-indigo-600 hover:text-indigo-800">
+                    {{ profile.linkedin }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if profile.bio %}
+        <div class="mt-6 border-t pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Bio</h3>
+            <div class="prose max-w-none">{{ profile.bio|safe }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <p class="text-gray-500 text-lg mb-4">You haven't created a profile yet.</p>
+        <a href="{% url 'frontend:profile_edit' %}"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-3 rounded-md font-medium inline-block">
+            Create Your Profile
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

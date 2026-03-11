@@ -1,0 +1,162 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Company Map - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mb-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Company Locations</h1>
+        <a href="{% url 'frontend:company_list' %}"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md font-medium">
+            Browse Companies
+        </a>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map" class="w-full rounded-lg shadow-lg" style="height: 600px;"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Company data from Django template
+const companies = [
+    {% for company in companies %}
+    {% if company.latitude and company.longitude %}
+    {
+        id: '{{ company.id }}',
+        name: '{{ company.name|escapejs }}',
+        field: '{{ company.field|escapejs }}',
+        address: '{{ company.address|escapejs }}',
+        website: '{{ company.website }}',
+        logo_url: '{{ company.logo_url }}',
+        latitude: parseFloat('{{ company.latitude }}'),
+        longitude: parseFloat('{{ company.longitude }}'),
+        contact: '{{ company.contact }}',
+        potential_improvement: '{{ company.potential_improvement|escapejs|truncatewords:30 }}'
+    }{% if not forloop.last %},{% endif %}
+    {% endif %}
+    {% endfor %}
+];
+
+// Initialize Google Map
+async function initMap() {
+    // Load custom map style
+    let mapStyle = [];
+    try {
+        const styleResponse = await fetch('/static/style.json');
+        if (styleResponse.ok) {
+            mapStyle = await styleResponse.json();
+        }
+    } catch (error) {
+        console.warn('Could not load custom map style:', error);
+    }
+    
+    // Default center (will be adjusted if we have companies)
+    let centerLat = 50.8503;
+    let centerLng = 4.3517; // Brussels, Belgium
+    
+    // If we have companies with coordinates, center on the first one
+    if (companies.length > 0) {
+        centerLat = companies[0].latitude;
+        centerLng = companies[0].longitude;
+    }
+    
+    const map = new google.maps.Map(document.getElementById('map'), {
+        zoom: companies.length === 1 ? 12 : 6,
+        center: { lat: centerLat, lng: centerLng },
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
+        styles: mapStyle // Apply custom style
+    });
+    
+    // Create markers and info windows for each company
+    companies.forEach(company => {
+        const marker = new google.maps.Marker({
+            position: { lat: company.latitude, lng: company.longitude },
+            map: map,
+            title: company.name,
+            animation: google.maps.Animation.DROP
+        });
+        
+        // Create info window content
+        const infoWindowContent = `
+            <div style="max-width: 300px; padding: 10px;">
+                ${company.logo_url ? `
+                    <div style="margin-bottom: 10px; text-align: center;">
+                        <img src="${company.logo_url}" alt="${company.name}" style="max-height: 60px; max-width: 100%; object-fit: contain;">
+                    </div>
+                ` : ''}
+                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: bold; color: #111827;">
+                    ${company.name}
+                </h3>
+                <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">
+                    ${company.field}
+                </p>
+                <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 13px;">
+                    <i class="fas fa-map-marker-alt"></i> ${company.address}
+                </p>
+                ${company.potential_improvement ? `
+                    <div style="margin: 10px 0; padding: 10px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px;">
+                        <p style="margin: 0; color: #1F2937; font-size: 13px; line-height: 1.5;">
+                            ${company.potential_improvement}
+                        </p>
+                    </div>
+                ` : ''}
+                <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="/companies/${company.id}/" style="color: #4F46E5; text-decoration: none; font-weight: 500; font-size: 14px;">
+                        View Details →
+                    </a>
+                    ${company.website ? `
+                        <a href="${company.website}" target="_blank" style="color: #6B7280; text-decoration: none; font-size: 14px;">
+                            <i class="fas fa-external-link-alt"></i> Website
+                        </a>
+                    ` : ''}
+                    ${company.contact ? `
+                        <a href="mailto:${company.contact}" style="color: #6B7280; text-decoration: none; font-size: 14px;">
+                            <i class="fas fa-envelope"></i> Contact
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: infoWindowContent,
+            maxWidth: 320
+        });
+        
+        // Show info window on marker click
+        marker.addListener('click', () => {
+            // Close any open info windows
+            companies.forEach(c => {
+                if (c.infoWindow) {
+                    c.infoWindow.close();
+                }
+            });
+            
+            infoWindow.open(map, marker);
+        });
+        
+        // Store info window reference for closing later
+        company.infoWindow = infoWindow;
+    });
+    
+    // Adjust map bounds to fit all markers if we have multiple companies
+    if (companies.length > 1) {
+        const bounds = new google.maps.LatLngBounds();
+        companies.forEach(company => {
+            bounds.extend({ lat: company.latitude, lng: company.longitude });
+        });
+        map.fitBounds(bounds);
+    }
+}
+
+// Load the Google Maps script
+window.initMap = initMap;
+</script>
+
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2y0vyo7rXNmBIICiHOlGWXo5r-gUXmUs&callback=initMap" async defer></script>
+{% endblock %}

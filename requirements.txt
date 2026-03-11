@@ -1,0 +1,7 @@
+Django==5.2.10
+djangorestframework==3.16.1
+django-mongodb-backend==5.2.3
+pymongo>=4.10
+dnspython==2.7.0
+django-cors-headers==4.9.0
+python-dotenv==1.0.0

@@ -1,0 +1,65 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Delete Company - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">Delete Company</h1>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Warning</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>Are you sure you want to delete <strong>"{{ company.name }}"</strong>?</p>
+                        <p class="mt-1">This action cannot be undone. All applications to this company will also be deleted.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Company Name</label>
+                <div class="mt-1 text-gray-900">{{ company.name }}</div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Field</label>
+                <div class="mt-1 text-gray-600">{{ company.field }}</div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Website</label>
+                <div class="mt-1">
+                    <a href="{{ company.website }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                        {{ company.website }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex space-x-3">
+            <form method="post" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Yes, Delete Company
+                </button>
+            </form>
+            
+            <a href="{% url 'frontend:company_detail' company.id %}" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md text-center hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}{% if company %}Edit{% else %}Create{% endif %} Company - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">
+        {% if company %}Edit Company{% else %}Create New Company{% endif %}
+    </h1>
+
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+
+        <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                Company Name *
+            </label>
+            <input type="text" id="name" name="name" required value="{% if company %}{{ company.name }}{% endif %}"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div>
+            <label for="field" class="block text-sm font-medium text-gray-700 mb-2">
+                Field *
+            </label>
+            <input type="text" id="field" name="field" required value="{% if company %}{{ company.field }}{% endif %}"
+                placeholder="e.g., Software Development, Marketing, Design"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div>
+            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                Address *
+            </label>
+            <textarea id="address" name="address" required rows="3" placeholder="123 Main St, City, State, Country"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">{% if company %}{{ company.address }}{% endif %}</textarea>
+        </div>
+
+        <div>
+            <label for="website" class="block text-sm font-medium text-gray-700 mb-2">
+                Website *
+            </label>
+            <input type="url" id="website" name="website" required
+                value="{% if company %}{{ company.website }}{% endif %}" placeholder="https://example.com"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                Phone
+            </label>
+            <input type="text" id="phone" name="phone"
+                value="{% if company and company.phone %}{{ company.phone }}{% endif %}" placeholder="+1 234 567 8900"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div>
+            <label for="plus_code" class="block text-sm font-medium text-gray-700 mb-2">
+                Plus Code (Location)
+            </label>
+            <input type="text" id="plus_code" name="plus_code"
+                value="{% if company and company.plus_code %}{{ company.plus_code }}{% endif %}"
+                placeholder="849VCWC8+R9"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="latitude" class="block text-sm font-medium text-gray-700 mb-2">
+                    Latitude
+                </label>
+                <input type="text" id="latitude" name="latitude"
+                    value="{% if company and company.latitude %}{{ company.latitude }}{% endif %}"
+                    placeholder="40.7128"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <label for="longitude" class="block text-sm font-medium text-gray-700 mb-2">
+                    Longitude
+                </label>
+                <input type="text" id="longitude" name="longitude"
+                    value="{% if company and company.longitude %}{{ company.longitude }}{% endif %}"
+                    placeholder="-74.0060"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+        </div>
+
+        <div>
+            <label for="technologies" class="block text-sm font-medium text-gray-700 mb-2">
+                Technologies & Stack
+            </label>
+            <input type="text" id="technologies" name="technologies"
+                value="{% if company and company.technologies %}{{ company.technologies }}{% endif %}"
+                placeholder="python,vue,wordpress,php,react,docker"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            <p class="text-sm text-gray-500 mt-1">Enter comma-separated technologies (e.g., python, vue, wordpress, php). Icons will be displayed automatically.</p>
+        </div>
+
+        <div>
+            <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">
+                Contact Email
+            </label>
+            <input type="email" id="contact" name="contact"
+                value="{% if company and company.contact %}{{ company.contact }}{% endif %}"
+                placeholder="contact@example.com"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div>
+            <label for="contact_form_url" class="block text-sm font-medium text-gray-700 mb-2">
+                Contact Form URL
+            </label>
+            <input type="url" id="contact_form_url" name="contact_form_url"
+                value="{% if company and company.contact_form_url %}{{ company.contact_form_url }}{% endif %}"
+                placeholder="https://example.com/contact"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <!-- Social Media Fields -->
+        <div class="border-t pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-share-alt mr-2"></i>Social Media
+            </h3>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="linkedin_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fab fa-linkedin text-blue-700 mr-2"></i>LinkedIn
+                    </label>
+                    <input type="url" id="linkedin_url" name="linkedin_url"
+                        value="{% if company and company.linkedin_url %}{{ company.linkedin_url }}{% endif %}"
+                        placeholder="https://linkedin.com/company/yourcompany"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="facebook_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fab fa-facebook text-blue-600 mr-2"></i>Facebook
+                    </label>
+                    <input type="url" id="facebook_url" name="facebook_url"
+                        value="{% if company and company.facebook_url %}{{ company.facebook_url }}{% endif %}"
+                        placeholder="https://facebook.com/yourcompany"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="twitter_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fab fa-twitter text-sky-500 mr-2"></i>Twitter
+                    </label>
+                    <input type="url" id="twitter_url" name="twitter_url"
+                        value="{% if company and company.twitter_url %}{{ company.twitter_url }}{% endif %}"
+                        placeholder="https://twitter.com/yourcompany"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="instagram_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fab fa-instagram text-pink-600 mr-2"></i>Instagram
+                    </label>
+                    <input type="url" id="instagram_url" name="instagram_url"
+                        value="{% if company and company.instagram_url %}{{ company.instagram_url }}{% endif %}"
+                        placeholder="https://instagram.com/yourcompany"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="youtube_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fab fa-youtube text-red-600 mr-2"></i>YouTube
+                    </label>
+                    <input type="url" id="youtube_url" name="youtube_url"
+                        value="{% if company and company.youtube_url %}{{ company.youtube_url }}{% endif %}"
+                        placeholder="https://youtube.com/@yourcompany"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <div>
+    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+        Company Description
+    </label>
+    <div id="description-editor" class="bg-white border border-gray-300 rounded-md" style="min-height: 200px;">
+    </div>
+    <input type="hidden" id="description" name="description"
+        value="{% if company %}{{ company.description }}{% endif %}">
+</div>
+
+<div>
+    <label for="potential_improvement" class="block text-sm font-medium text-gray-700 mb-2">
+        Potential Improvement
+    </label>
+    <textarea id="potential_improvement" name="potential_improvement" rows="4"
+        placeholder="What improvements or projects is the company looking for?"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">{% if company and company.potential_improvement %}{{ company.potential_improvement }}{% endif %}</textarea>
+    <p class="text-sm text-gray-500 mt-1">Describe what kind of improvements or contributions you're seeking</p>
+</div>
+
+<div>
+    <label for="vat_number" class="block text-sm font-medium text-gray-700 mb-2">
+        VAT Number
+    </label>
+    <input type="text" id="vat_number" name="vat_number"
+        value="{% if company and company.vat_number %}{{ company.vat_number }}{% endif %}" 
+        placeholder="EU123456789"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+</div>
+
+<div>
+    <label for="logo_url" class="block text-sm font-medium text-gray-700 mb-2">
+        Logo URL *
+    </label>
+    <input type="url" id="logo_url" name="logo_url" required value="{% if company %}{{ company.logo_url }}{% endif %}"
+        placeholder="https://example.com/logo.png"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+</div>
+
+<div class="flex justify-between items-center pt-4">
+    <a href="{% if company %}{% url 'frontend:company_detail' company.id %}{% else %}{% url 'frontend:company_list' %}{% endif %}"
+        class="text-gray-600 hover:text-gray-800">
+        Cancel
+    </a>
+    <button type="submit" class="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-md font-medium">
+        {% if company %}Update Company{% else %}Create Company{% endif %}
+    </button>
+</div>
+</form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize Quill editor
+    var quill = new Quill('#description-editor', {
+        theme: 'snow',
+        placeholder: 'Brief description of your company...',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline'],
+                ['link'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['clean']
+            ]
+        }
+    });
+
+    // Set initial content if editing
+    {% if company and company.description %}
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `{{ company.description | escapejs }}`;
+    quill.root.innerHTML = tempDiv.innerHTML;
+    {% endif %}
+
+    // Update hidden field on form submit
+    document.querySelector('form').onsubmit = function () {
+        document.querySelector('#description').value = quill.root.innerHTML;
+    };
+</script>
+{% endblock %}

@@ -1,0 +1,392 @@
+{% extends 'frontend/base.html' %}
+{% load company_filters %}
+
+{% block title %}Companies - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div id="app">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">All Companies</h1>
+        {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'frontend:company_create' %}"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md font-medium">
+            Add New Company
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Companies</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search by name -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search by name</label>
+                <input type="text" 
+                       v-model="searchQuery"
+                       @input="searchCompanies"
+                       placeholder="Type company name..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            
+            <!-- Filter by country -->
+            <div>
+                <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Filter by country</label>
+                <select v-model="selectedCountry"
+                        @change="searchCompanies"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Countries</option>
+                    <option v-for="country in countries" :key="country.name" :value="country.name">{% verbatim %}{{ country.flag }} {{ country.name }}{% endverbatim %}</option>
+                </select>
+            </div>
+            
+            <!-- Filter by application status -->
+            {% if user.is_authenticated %}
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Filter by application status</label>
+                <select v-model="selectedStatus"
+                        @change="searchCompanies"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Statuses</option>
+                    <option value="not-applied">Not Applied</option>
+                    <option value="created">Created</option>
+                    <option value="sent">Sent</option>
+                    <option value="interview">Interview</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="refused">Refused</option>
+                </select>
+            </div>
+            {% else %}
+            <div></div>
+            {% endif %}
+        </div>
+        <div class="mt-4 flex justify-between items-center">
+            <p class="text-sm text-gray-600">
+                Showing {% verbatim %}{{ pagination.total_items }}{% endverbatim %} companies
+                <span v-if="pagination.total_pages > 1"> (Page {% verbatim %}{{ pagination.current_page }}{% endverbatim %} of {% verbatim %}{{ pagination.total_pages }}{% endverbatim %})</span>
+            </p>
+            <button @click="clearFilters" type="button" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Clear Filters</button>
+        </div>
+    </div>
+
+    <!-- Loading state -->
+    <div v-if="loading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <p class="mt-2 text-gray-500">Loading companies...</p>
+    </div>
+
+    <!-- Companies Grid -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="company in companies" :key="company.id" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <!-- Company Logo -->
+            <div v-if="company.logo_url" class="mb-4 flex justify-left">
+                <a :href="company.website" target="_blank" class="block">
+                    <img :src="company.logo_url" :alt="company.name + ' logo'"
+                        class="h-[60px] max-w-full object-contain rounded" style="background-color: rgba(0, 0, 0, 0.03);">
+                </a>
+            </div>
+            
+            <div class="text-left mb-4">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">{% verbatim %}{{ company.name }}{% endverbatim %}</h3>
+                <p class="text-gray-600 mb-2">{% verbatim %}{{ company.field }}{% endverbatim %}</p>
+
+                <!-- Location Info -->
+                <p v-if="company.address" class="text-sm text-gray-500 mb-2">
+                    <i class="fas fa-map-marker-alt mr-1"></i>{% verbatim %}{{ getCountryFlag(company.address) }} {{ company.address }}{% endverbatim %}
+                </p>
+
+                <!-- Technologies -->
+                <div v-if="company.technologies" class="flex flex-wrap gap-2 justify-left mb-3">
+                    <template v-for="tech in splitTechnologies(company.technologies)">
+                        <span v-if="getTechIcon(tech)" 
+                              class="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700 relative group cursor-help" 
+                              :title="tech">
+                            <img :src="getTechIcon(tech)" :alt="tech" class="w-4 h-4">
+                            <!-- Enhanced tooltip -->
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                {% verbatim %}{{ tech }}{% endverbatim %}
+                            </span>
+                        </span>
+                        <span v-else 
+                              class="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 font-medium" 
+                              :title="tech">
+                            {% verbatim %}{{ tech }}{% endverbatim %}
+                        </span>
+                    </template>
+                </div>
+
+                <div v-if="company.potential_improvement" class="mb-8 mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <p class="text-gray-700 leading-relaxed">{% verbatim %}{{ company.potential_improvement }}{% endverbatim %}</p>
+                </div>
+
+                <!-- Social Media Icons -->
+                <div v-if="hasSocialMedia(company)" class="flex space-x-2 justify-left">
+                    <a v-if="company.contact" :href="'mailto:' + company.contact" class="text-gray-500 hover:text-indigo-600 text-sm" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                    <a v-if="company.linkedin_url" :href="company.linkedin_url" target="_blank" class="text-gray-500 hover:text-blue-700 text-sm" title="LinkedIn">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a v-if="company.facebook_url" :href="company.facebook_url" target="_blank" class="text-gray-500 hover:text-blue-600 text-sm" title="Facebook">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a v-if="company.twitter_url" :href="company.twitter_url" target="_blank" class="text-gray-500 hover:text-sky-500 text-sm" title="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a v-if="company.instagram_url" :href="company.instagram_url" target="_blank" class="text-gray-500 hover:text-pink-600 text-sm" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a v-if="company.youtube_url" :href="company.youtube_url" target="_blank" class="text-gray-500 hover:text-red-600 text-sm" title="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <a :href="'/companies/' + company.id + '/'"
+                    class="text-indigo-600 hover:text-indigo-800 font-medium">
+                    View Details →
+                </a>
+                <span v-if="company.application_status" class="px-3 py-1 rounded-full text-xs font-medium"
+                    :class="{
+                        'bg-gray-100 text-gray-800': company.application_status === 'created',
+                        'bg-blue-100 text-blue-800': company.application_status === 'sent',
+                        'bg-yellow-100 text-yellow-800': company.application_status === 'interview',
+                        'bg-green-100 text-green-800': company.application_status === 'accepted',
+                        'bg-red-100 text-red-800': company.application_status === 'refused'
+                    }">
+                    {% verbatim %}{{ company.application_status === 'interview' ? 'Interview' : company.application_status.charAt(0).toUpperCase() + company.application_status.slice(1) }}{% endverbatim %}
+                </span>
+                {% if user.is_staff or user.is_superuser %}
+                <a v-else-if="isAuthenticated" :href="'/companies/' + company.id + '/edit/'" class="text-gray-600 hover:text-gray-800 text-sm">
+                    Edit
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- No results -->
+    <div v-if="!loading && companies.length === 0" class="text-center py-12">
+        <p class="text-gray-500 text-lg">No companies found matching your criteria.</p>
+        <button @click="clearFilters" type="button" class="text-indigo-600 hover:text-indigo-800 font-medium mt-2">
+            Clear Filters
+        </button>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="pagination.total_pages > 1" class="mt-8 flex justify-center">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <button v-if="pagination.has_previous" @click="loadPage(pagination.current_page - 1)"
+                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Previous</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                </svg>
+            </button>
+
+            <button v-for="pageNum in visiblePages" :key="pageNum" @click="loadPage(pageNum)"
+                :class="pageNum === pagination.current_page 
+                    ? 'relative inline-flex items-center px-4 py-2 border border-indigo-500 bg-indigo-50 text-sm font-medium text-indigo-600'
+                    : 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50'">
+                {% verbatim %}{{ pageNum }}{% endverbatim %}
+            </button>
+
+            <button v-if="pagination.has_next" @click="loadPage(pagination.current_page + 1)"
+                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Next</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </nav>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Vue.js 3 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+
+<!-- Shared Technology Icons System -->
+{% include 'frontend/_tech_icons_script.html' %}
+
+<script>
+const { createApp } = Vue;
+const countryFlags = {{ country_flags_json|safe }};
+
+createApp({
+    data() {
+        return {
+            companies: [],
+            countries: [],
+            searchQuery: '',
+            selectedCountry: '',
+            selectedStatus: '',
+            pagination: {
+                current_page: 1,
+                total_pages: 1,
+                page_size: 9,
+                total_items: 0,
+                has_next: false,
+                has_previous: false
+            },
+            loading: false,
+            searchTimeout: null
+        };
+    },
+    computed: {
+        visiblePages() {
+            const current = this.pagination.current_page;
+            const total = this.pagination.total_pages;
+            const pages = [];
+            
+            // Show maximum 5 pages
+            const maxVisible = 5;
+            let start = Math.max(1, current - Math.floor(maxVisible / 2));
+            let end = Math.min(total, start + maxVisible - 1);
+            
+            // Adjust start if we're near the end
+            if (end - start + 1 < maxVisible) {
+                start = Math.max(1, end - maxVisible + 1);
+            }
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            return pages;
+        },
+        isAuthenticated() {
+            return {{ user.is_authenticated|yesno:"true,false" }};
+        }
+    },
+    async mounted() {
+        await this.loadCompanies(1);
+        await this.loadCountries();
+    },
+    methods: {
+        async loadCompanies(page = 1) {
+            this.loading = true;
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    page_size: this.pagination.page_size
+                });
+                
+                if (this.searchQuery) {
+                    params.append('search', this.searchQuery);
+                }
+                
+                if (this.selectedCountry) {
+                    params.append('country', this.selectedCountry);
+                }
+                
+                if (this.selectedStatus) {
+                    params.append('status', this.selectedStatus);
+                }
+                
+                const response = await fetch(`/api/companies/paginated/?${params}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                this.companies = data.results || [];
+                this.pagination = data.pagination || this.pagination;
+                
+            } catch (error) {
+                console.error('Error loading companies:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+        async loadCountries() {
+            try {
+                // Load all countries from dedicated endpoint
+                const response = await fetch('/api/companies/countries/', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const countries = await response.json();
+                    this.countries = countries;
+                }
+            } catch (error) {
+                console.error('Error loading countries:', error);
+            }
+        },
+        extractCountriesFromData(companies) {
+            // This is no longer needed since we use a dedicated endpoint
+            const countryMap = new Map();
+            companies.forEach(company => {
+                if (company.address) {
+                    const parts = company.address.split(/\s+/);
+                    if (parts.length > 0) {
+                        const country = parts[parts.length - 1].trim();
+                        if (country) {
+                            const flag = this.getCountryFlag(company.address);
+                            countryMap.set(country, {
+                                name: country,
+                                flag: flag
+                            });
+                        }
+                    }
+                }
+            });
+            this.countries = Array.from(countryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        },
+        searchCompanies() {
+            // Debounce search to avoid too many API calls
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.loadCompanies(1);
+            }, 500);
+        },
+        loadPage(page) {
+            if (page !== this.pagination.current_page) {
+                this.loadCompanies(page);
+            }
+        },
+        clearFilters() {
+            this.searchQuery = '';
+            this.selectedCountry = '';
+            this.selectedStatus = '';
+            this.loadCompanies(1);
+        },
+        extractCountries() {
+            // This method is now called separately to avoid interference with server-side filtering
+            // Countries are loaded once from all available data
+        },
+        getCountryFlag(address) {
+            if (!address) return '🌍';
+            const parts = address.split(/\s+/);
+            const lastWord = parts[parts.length - 1]?.toLowerCase().trim();
+            return countryFlags[lastWord] || '🌍';
+        },
+        // Use global functions from shared script
+        splitTechnologies: window.splitTechnologies,
+        getTechIcon: window.getTechIcon,
+        hasSocialMedia(company) {
+            return company.contact || 
+                   (company.linkedin_url && company.linkedin_url !== '') ||
+                   (company.facebook_url && company.facebook_url !== '') ||
+                   (company.twitter_url && company.twitter_url !== '') ||
+                   (company.instagram_url && company.instagram_url !== '') ||
+                   (company.youtube_url && company.youtube_url !== '');
+        }
+    }
+}).mount('#app');
+</script>
+{% endblock %}

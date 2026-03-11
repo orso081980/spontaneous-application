@@ -1,0 +1,207 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}{% if edit_mode %}Edit Application{% else %}Apply to {{ company.name }}{% endif %} - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div id="app" class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+        {% if edit_mode %}
+            Edit Application to {{ company.name }}
+        {% else %}
+            Apply to {{ company.name }}
+        {% endif %}
+    </h1>
+    <p class="text-gray-600 mb-6">{{ company.field }}</p>
+
+    {% if not edit_mode and company.potential_improvement %}
+    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-2">💡 What they're looking for:</h3>
+        <p class="text-gray-700 text-sm">{{ company.potential_improvement }}</p>
+    </div>
+    {% endif %}
+
+    <form method="POST" class="space-y-6" @submit="handleSubmit" ref="form">
+        {% csrf_token %}
+
+        <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+            <p class="text-sm text-blue-800 mb-2">
+                <strong>Applicant:</strong> {{ profile.name }} ({{ profile.email }})
+            </p>
+            {% if company.contact %}
+            <p class="text-sm text-blue-800">
+                <strong>Company Contact:</strong> {{ company.contact }}
+            </p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="position" class="block text-sm font-medium text-gray-700 mb-2">
+                Position You're Proposing For
+            </label>
+            <input type="text" id="position" name="position" 
+                value="{% if application %}{{ application.position|default:'' }}{% endif %}"
+                placeholder="e.g., Senior Developer, UX Designer, Product Manager"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            <p class="text-sm text-gray-500 mt-1">What position could you fill at this company? (Optional)</p>
+        </div>
+
+        <div>
+            <label for="project-editor" class="block text-sm font-medium text-gray-700 mb-2">
+                Project Suggestion *
+            </label>
+            <div id="project-editor" class="bg-white border border-gray-300 rounded-md" style="min-height: 200px;">
+            </div>
+            <input type="hidden" id="project_to_suggest" name="project_to_suggest" required>
+            <p class="text-sm text-gray-500 mt-1">Describe how you can help improve their product or service (Required)</p>
+        </div>
+
+        <div>
+            <label for="link_to_project" class="block text-sm font-medium text-gray-700 mb-2">
+                Link to Project or Portfolio
+            </label>
+            <input type="url" id="link_to_project" name="link_to_project"
+                value="{% if application %}{{ application.link_to_project|default:'' }}{% endif %}"
+                placeholder="https://github.com/yourproject or https://yourportfolio.com"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            <p class="text-sm text-gray-500 mt-1">Link to your project or portfolio (Optional)</p>
+        </div>
+
+        <div>
+            <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
+                Letter of Introduction
+            </label>
+            <textarea id="message" name="message" rows="6"
+                placeholder="Introduce yourself and explain why you're interested in working with this company..."
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">{% if application %}{{ application.message|default:'' }}{% endif %}</textarea>
+            <p class="text-sm text-gray-500 mt-1">Your letter of introduction to the company (Optional)</p>
+        </div>
+
+        {% if edit_mode %}
+        <div>
+            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+                Application Status
+            </label>
+            <select id="status" name="status"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="created" {% if application.status == 'created' %}selected{% endif %}>Created</option>
+                <option value="sent" {% if application.status == 'sent' %}selected{% endif %}>Sent</option>
+                <option value="interview" {% if application.status == 'interview' %}selected{% endif %}>Interview State</option>
+                <option value="accepted" {% if application.status == 'accepted' %}selected{% endif %}>Accepted</option>
+                <option value="refused" {% if application.status == 'refused' %}selected{% endif %}>Refused</option>
+            </select>
+            <p class="text-sm text-gray-500 mt-1">Update the status of your application</p>
+        </div>
+        {% endif %}
+
+        <div class="flex justify-between items-center pt-4">
+            <a href="{% if edit_mode %}{% url 'frontend:my_applications' %}{% else %}{% url 'frontend:company_detail' company.id %}{% endif %}" 
+               class="text-gray-600 hover:text-gray-800">
+                Cancel
+            </a>
+            <button type="submit" class="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-md font-medium">
+                {% if edit_mode %}Update Application{% else %}Submit Application{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Vue.js 3 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        return {
+            projectHtml: '',
+            messageHtml: '',
+            projectQuill: null,
+            messageQuill: null
+        };
+    },
+    mounted() {
+        // Initialize Quill editor for project
+        this.projectQuill = new Quill('#project-editor', {
+            theme: 'snow',
+            placeholder: 'Describe your project suggestion in detail...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    ['link'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    ['clean']
+                ]
+            }
+        });
+
+        {% if application and application.project_to_suggest %}
+        // Load existing content if editing
+        this.projectQuill.root.innerHTML = `{{ application.project_to_suggest|safe|escapejs }}`;
+        {% endif %}
+
+        // Initialize Quill editor for message (Letter of Introduction)
+        const textarea = document.getElementById('message');
+        if (textarea) {
+            // Create an editor container and insert it before the textarea
+            const messageEditor = document.createElement('div');
+            messageEditor.id = 'message-editor';
+            messageEditor.className = 'bg-white border border-gray-300 rounded-md';
+            messageEditor.style.minHeight = '150px';
+            textarea.parentNode.insertBefore(messageEditor, textarea);
+
+            // Hide the textarea but keep it in the DOM for form submission
+            textarea.style.display = 'none';
+
+            // Populate editor with existing content if editing
+            {% if application and application.message %}
+            messageEditor.innerHTML = `{{ application.message|safe|escapejs }}`;
+            {% endif %}
+
+            try {
+                this.messageQuill = new Quill('#message-editor', {
+                    theme: 'snow',
+                    placeholder: 'Introduce yourself and explain why you\'re interested in working with this company...',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            ['link'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['clean']
+                        ]
+                    }
+                });
+            } catch (err) {
+                console.error('Error initializing message Quill editor:', err);
+            }
+        }
+    },
+    methods: {
+        handleSubmit(e) {
+            e.preventDefault();
+            
+            try {
+                // Sync Quill content to hidden inputs
+                if (this.projectQuill) {
+                    this.projectHtml = this.projectQuill.root.innerHTML;
+                    document.getElementById('project_to_suggest').value = this.projectHtml;
+                }
+
+                const textarea = document.getElementById('message');
+                if (this.messageQuill && textarea) {
+                    this.messageHtml = this.messageQuill.root.innerHTML;
+                    textarea.value = this.messageHtml;
+                }
+
+                // Submit the form
+                this.$refs.form.submit();
+            } catch (err) {
+                console.error('Error submitting form:', err);
+            }
+        }
+    }
+}).mount('#app');
+</script>
+{% endblock %}

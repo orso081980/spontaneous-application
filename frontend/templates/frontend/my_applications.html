@@ -1,0 +1,284 @@
+{% extends 'frontend/base.html' %}
+{% load company_filters %}
+
+{% block title %}My Applications - Spontaneous Job Board{% endblock %}
+
+{% block content %}
+<div id="app" class="max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">My Applications</h1>
+        <a href="{% url 'frontend:company_list' %}"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md font-medium">
+            Browse Companies
+        </a>
+    </div>
+
+    {% if applications %}
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Applications</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search by company name -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search by company name</label>
+                <input type="text" 
+                       v-model="searchQuery"
+                       placeholder="Type company name..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            
+            <!-- Filter by country -->
+            <div>
+                <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Filter by country</label>
+                <select v-model="selectedCountry"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Countries</option>
+                    <option v-for="country in countries" :key="country.name" :value="country.name">{% verbatim %}{{ country.flag }} {{ country.name }}{% endverbatim %}</option>
+                </select>
+            </div>
+
+            <!-- Filter by application status -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Filter by application status</label>
+                <select v-model="selectedStatus"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Statuses</option>
+                    <option value="created">Created</option>
+                    <option value="sent">Sent</option>
+                    <option value="interview">Interview</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="refused">Refused</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-4 flex justify-between items-center">
+            <p class="text-sm text-gray-600">Showing {% verbatim %}{{ filteredApplications.length }}{% endverbatim %} of {% verbatim %}{{ allApplications.length }}{% endverbatim %} applications</p>
+            <button @click="clearFilters" type="button" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Clear Filters</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <template v-for="application in filteredApplications" :key="application.id">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <!-- Header with buttons at top -->
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">{% verbatim %}{{ application.company_name }}{% endverbatim %}</h3>
+                    <p class="text-gray-600 text-sm">{% verbatim %}{{ application.company_field }}{% endverbatim %}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        <i class="fas fa-map-marker-alt mr-1"></i>{% verbatim %}{{ application.country_flag }} {{ application.company_country }}{% endverbatim %}
+                    </p>
+                </div>
+                <div class="flex gap-2 ml-4">
+                    <a :href="'/applications/' + application.id + '/edit/'"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
+                        Edit
+                    </a>
+                    <form method="POST" :action="'/applications/' + application.id + '/delete/'" 
+                          :onsubmit="'return confirm(\'Are you sure you want to delete this application to ' + application.company_name + '?\');'"
+                          class="inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-medium">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div class="mb-4">
+                <span class="px-3 py-1 rounded-full text-sm font-medium"
+                    :class="{
+                        'bg-gray-100 text-gray-800': application.status === 'created',
+                        'bg-blue-100 text-blue-800': application.status === 'sent',
+                        'bg-yellow-100 text-yellow-800': application.status === 'interview',
+                        'bg-green-100 text-green-800': application.status === 'accepted',
+                        'bg-red-100 text-red-800': application.status === 'refused'
+                    }">
+                    {% verbatim %}{{ application.status === 'interview' ? 'Interview State' : application.status.charAt(0).toUpperCase() + application.status.slice(1) }}{% endverbatim %}
+                </span>
+            </div>
+
+            <!-- Application Details -->
+            <div class="space-y-3 mb-4">
+                <div v-if="application.position">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Position</h4>
+                    <p class="text-gray-900">{% verbatim %}{{ application.position }}{% endverbatim %}</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Applied</h4>
+                    <p class="text-gray-900">{% verbatim %}{{ application.created_at }}{% endverbatim %}</p>
+                </div>
+            </div>
+
+            <div v-if="application.project_to_suggest && application.project_to_suggest !== 'None'" class="mb-3">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Project Suggestion</h4>
+                <div class="prose max-w-none text-gray-700 text-sm" v-html="application.project_to_suggest_truncated">
+                </div>
+            </div>
+
+            <div v-if="application.link_to_project && application.link_to_project !== 'None' && application.link_to_project !== ''" class="mb-3">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Project Link</h4>
+                <a :href="application.link_to_project" target="_blank"
+                    class="text-indigo-600 hover:text-indigo-800 text-sm break-all">
+                    {% verbatim %}{{ application.link_to_project_short }}{% endverbatim %}
+                </a>
+            </div>
+
+            <div v-if="application.message && application.message !== 'None'" class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase">Message</h4>
+                    <button @click="toggleMessage(application.id)"
+                            type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                        <span v-if="isMessageExpanded(application.id)">Show Less</span>
+                        <span v-else>Show More</span>
+                    </button>
+                </div>
+                <div class="prose max-w-none text-gray-700 text-sm">
+                    <div v-if="isMessageExpanded(application.id)" v-html="application.message">
+                    </div>
+                    <div v-else v-html="application.message_truncated">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Links -->
+            <div class="flex gap-3 pt-3 border-t">
+                <a :href="'/companies/' + application.company_id + '/'"
+                    class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">
+                    View Company →
+                </a>
+                <a v-if="application.company_contact" :href="'mailto:' + application.company_contact" class="text-gray-600 hover:text-gray-800 text-sm">
+                    {% verbatim %}{{ application.company_contact }}{% endverbatim %}
+                </a>
+            </div>
+        </div>
+        </template>
+    </div>
+    
+    <div v-if="filteredApplications.length === 0" class="bg-white rounded-lg shadow-md p-8 text-center">
+        <p class="text-gray-500 text-lg mb-4">No applications match your filters.</p>
+        <button @click="clearFilters" type="button" class="text-indigo-600 hover:text-indigo-800 font-medium">
+            Clear Filters
+        </button>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <p class="text-gray-500 text-lg mb-4">You haven't applied to any companies yet.</p>
+        <a href="{% url 'frontend:company_list' %}"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-3 rounded-md font-medium inline-block">
+            Browse Companies
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Vue.js 3 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+
+<script>
+const { createApp } = Vue;
+
+// Helper functions
+function truncateHtml(html, wordLimit) {
+    if (!html) return '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const text = tempDiv.textContent || tempDiv.innerText || '';
+    const words = text.split(/\s+/).slice(0, wordLimit);
+    return words.join(' ') + (text.split(/\s+/).length > wordLimit ? '...' : '');
+}
+
+function truncateText(text, charLimit) {
+    if (!text || text.length <= charLimit) return text;
+    return text.substring(0, charLimit) + '...';
+}
+
+const applicationsData = [
+    {% for application in applications %}
+    {
+        id: '{{ application.id }}',
+        company_id: '{{ application.company.id }}',
+        company_name: '{{ application.company.name|escapejs }}',
+        company_field: '{{ application.company.field|escapejs }}',
+        company_country: '{{ application.company.address|get_country_name|escapejs }}',
+        country_flag: '{{ application.company.address|get_country_flag }}',
+        company_contact: '{{ application.company.contact }}',
+        status: '{{ application.status }}',
+        position: '{{ application.position|escapejs }}',
+        created_at: '{{ application.created_at|date:"F d, Y" }}',
+        project_to_suggest: `{{ application.project_to_suggest|safe|escapejs }}`,
+        project_to_suggest_truncated: `{{ application.project_to_suggest|safe|truncatewords_html:30|escapejs }}`,
+        link_to_project: '{{ application.link_to_project }}',
+        link_to_project_short: '{{ application.link_to_project|truncatechars:50 }}',
+        message: `{{ application.message|safe|escapejs }}`,
+        message_truncated: `{{ application.message|safe|truncatewords_html:50|escapejs }}`
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+createApp({
+    data() {
+        return {
+            allApplications: applicationsData,
+            searchQuery: '',
+            selectedCountry: '',
+            selectedStatus: '',
+            expandedMessages: {}
+        };
+    },
+    computed: {
+        countries() {
+            const countryMap = new Map();
+            this.allApplications.forEach(app => {
+                if (app.company_country && app.country_flag) {
+                    countryMap.set(app.company_country, {
+                        name: app.company_country,
+                        flag: app.country_flag
+                    });
+                }
+            });
+            return Array.from(countryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        },
+        filteredApplications() {
+            return this.allApplications.filter(app => {
+                // Filter by search query
+                if (this.searchQuery && !app.company_name.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+                    return false;
+                }
+                
+                // Filter by country
+                if (this.selectedCountry && app.company_country !== this.selectedCountry) {
+                    return false;
+                }
+
+                // Filter by status
+                if (this.selectedStatus && app.status !== this.selectedStatus) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+    },
+    methods: {
+        toggleMessage(applicationId) {
+            this.expandedMessages[applicationId] = !this.expandedMessages[applicationId];
+        },
+        isMessageExpanded(applicationId) {
+            return !!this.expandedMessages[applicationId];
+        },
+        clearFilters() {
+            this.searchQuery = '';
+            this.selectedCountry = '';
+            this.selectedStatus = '';
+        }
+    }
+}).mount('#app');
+</script>
+{% endblock %}
