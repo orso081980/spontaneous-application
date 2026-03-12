@@ -19,6 +19,13 @@ class ObjectIdField(serializers.Field):
             raise serializers.ValidationError("Invalid ObjectId")
 
 
+class ObjectIdPrimaryKeyField(serializers.PrimaryKeyRelatedField):
+    """PrimaryKeyRelatedField that serializes the pk (ObjectId) as a string."""
+
+    def to_representation(self, value):
+        return str(value.pk)
+
+
 class CompanySerializer(serializers.ModelSerializer):
     """Serializer for Company model"""
     id = ObjectIdField(read_only=True)
@@ -53,11 +60,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class JobApplicationSerializer(serializers.ModelSerializer):
     """Serializer for JobApplication model"""
     id = ObjectIdField(read_only=True)
-    user_profile_id = serializers.PrimaryKeyRelatedField(
+    user_profile_id = ObjectIdPrimaryKeyField(
         source='user_profile',
-        queryset=UserProfile.objects.all()
+        queryset=UserProfile.objects.all(),
+        required=False  # View always provides this via serializer.save(user_profile=...)
     )
-    company_id = serializers.PrimaryKeyRelatedField(
+    company_id = ObjectIdPrimaryKeyField(
         source='company',
         queryset=Company.objects.all()
     )
