@@ -14,7 +14,7 @@
       v-model:statusFilter="statusFilter"
       :countries="countries"
       :total-showing="result?.pagination.total_items ?? 0"
-      :current-page="result?.pagination.current_page"
+      :current-page="page"
       :total-pages="result?.pagination.total_pages"
       :show-status-filter="isAuthenticated"
       @search="onFilterSearch"
@@ -25,7 +25,7 @@
 
     <CompanyPagination
       v-if="result && result.pagination.total_pages > 1"
-      :current-page="result.pagination.current_page"
+      :current-page="page"
       :total-pages="result.pagination.total_pages"
       @page="onPageChange"
     />
@@ -98,6 +98,14 @@ const {
     server: !statusFilter.value,
     // Manual watch below — avoids the implicit Nuxt 4 client re-execute that causes
     // hydration mismatches when MongoDB returns results in a different order.
+  },
+);
+
+// Keep page ref in sync with the URL param (browser back/forward, direct navigation).
+watch(
+  () => route.params.n,
+  (n) => {
+    page.value = Number(n) || 1;
   },
 );
 

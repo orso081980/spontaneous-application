@@ -269,7 +269,7 @@ def companies_countries(request):
     
     for company in companies:
         if company.address:
-            parts = company.address.split()
+            parts = company.address.split(',')
             if parts:
                 country = parts[-1].strip()
                 if country:
