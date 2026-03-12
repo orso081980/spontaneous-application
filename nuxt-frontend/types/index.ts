@@ -42,9 +42,10 @@ export interface UserProfile {
 
 export interface JobApplication {
   id: string
-  company: string
+  company_id: string
   company_name: string
-  user_profile: string
+  company_country: string
+  user_profile_id: string
   position: string
   project_to_suggest: string
   link_to_project: string

@@ -17,7 +17,9 @@
       <div class="sm:col-span-2">
         <label class="form-label">Address</label>
         <input v-model="form.address" type="text" class="form-input" placeholder="Kerkstraat 106, 9050 Gent, Belgium" />
-        <p class="mt-1 text-xs text-gray-400">Format: <span class="font-mono">Street, City PostalCode, Country</span> — three comma-separated parts. City and country are saved automatically.</p>
+        <p class="mt-1 text-xs text-gray-400"
+          >Format: <span class="font-mono">Street, City PostalCode, Country</span> — three comma-separated parts. City and country are saved automatically.</p
+        >
       </div>
       <div>
         <label class="form-label">Contact email</label>

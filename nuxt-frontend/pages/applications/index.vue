@@ -171,7 +171,14 @@ const {
 );
 
 // ── Filters (composable) ──────────────────────────────────────────────────────
-const { search: filterSearch, country: filterCountry, countries: filterCountries, status: filterStatus, filtered, clear: clearFilters } = useApplicationFilters(applications);
+const {
+  search: filterSearch,
+  country: filterCountry,
+  countries: filterCountries,
+  status: filterStatus,
+  filtered,
+  clear: clearFilters,
+} = useApplicationFilters(applications);
 
 // ── Pagination (composable) ───────────────────────────────────────────────────
 const PAGE_SIZE = 9;

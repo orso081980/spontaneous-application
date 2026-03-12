@@ -76,7 +76,13 @@ async function submit() {
     });
     router.push("/applications");
   } catch (e: unknown) {
-    error.value = "Failed to submit application. Please try again.";
+    const err = e as Record<string, unknown>;
+    const data = err?.data as Record<string, unknown> | undefined;
+    if (data?.error && typeof data.error === "string" && data.error.includes("profile")) {
+      error.value = "You need to create a profile first. Go to your profile page to set one up.";
+    } else {
+      error.value = "Failed to submit application. Please try again.";
+    }
     console.error(e);
   } finally {
     loading.value = false;
