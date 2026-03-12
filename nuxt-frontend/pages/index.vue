@@ -79,8 +79,7 @@ const filtered = computed(() => {
   const list = companies.value ?? [];
   return list.filter((c) => {
     if (filterSearch.value) {
-      const q = filterSearch.value.toLowerCase();
-      if (!c.name.toLowerCase().includes(q) && !c.field.toLowerCase().includes(q)) return false;
+      if (!c.name.toLowerCase().includes(filterSearch.value.toLowerCase())) return false;
     }
     if (filterCountry.value && !c.address?.includes(filterCountry.value)) return false;
     if (filterStatus.value) {

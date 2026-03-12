@@ -28,7 +28,9 @@ class Company(models.Model):
     contact = models.EmailField(blank=True, null=True)  # Contact email
     contact_form_url = models.URLField(blank=True, null=True)  # Contact form URL
     phone = models.CharField(max_length=50, blank=True, null=True)
-    address = models.CharField(max_length=500)  # Company address
+    address = models.CharField(max_length=500)  # Full address — format: "Street, City PostalCode, Country"
+    city = models.CharField(max_length=200, blank=True, null=True)    # Parsed from address (part 2)
+    country = models.CharField(max_length=200, blank=True, null=True) # Parsed from address (part 3)
     vat_number = models.CharField(max_length=50, blank=True, null=True)  # VAT number
     description = models.TextField(blank=True, null=True)  # Brief company description (rich text from Quill)
     potential_improvement = models.TextField(blank=True, null=True)  # Potential improvements

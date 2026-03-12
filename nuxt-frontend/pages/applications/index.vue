@@ -25,33 +25,22 @@
     </div>
 
     <template v-else-if="applications?.length">
-      <!-- Filter card -->
-      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Applications</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SearchInput v-model="filterSearch" label="Search by company" placeholder="Type company name…" />
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Filter by status</label>
-            <select v-model="filterStatus" class="form-input">
-              <option value="">All Statuses</option>
-              <option value="created">Created</option>
-              <option value="sent">Sent</option>
-              <option value="interview">Interview Stage</option>
-              <option value="accepted">Accepted</option>
-              <option value="refused">Refused</option>
-            </select>
-          </div>
-          <div class="flex items-end">
-            <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <p class="text-sm text-gray-600">
-                Showing {{ filtered.length }} of {{ applications.length }} applications
-                <span v-if="totalPages > 1"> (Page {{ page }} of {{ totalPages }})</span>
-              </p>
-              <button type="button" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium" @click="clearFilters"> Clear Filters </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Filter card — same component as the companies page -->
+      <CompanyFilterCard
+        title="Filter Applications"
+        v-model:search="filterSearch"
+        v-model:country="filterCountry"
+        v-model:statusFilter="filterStatus"
+        :countries="filterCountries"
+        :total-showing="filtered.length"
+        :current-page="page"
+        :total-pages="totalPages > 1 ? totalPages : undefined"
+        total-label="applications"
+        :show-status-filter="true"
+        :show-not-applied="false"
+        @search="() => {}"
+        @clear="clearFilters"
+      />
 
       <!-- 3-column grid -->
       <div v-if="paginatedItems.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -182,7 +171,7 @@ const {
 );
 
 // ── Filters (composable) ──────────────────────────────────────────────────────
-const { search: filterSearch, status: filterStatus, filtered, clear: clearFilters } = useApplicationFilters(applications);
+const { search: filterSearch, country: filterCountry, countries: filterCountries, status: filterStatus, filtered, clear: clearFilters } = useApplicationFilters(applications);
 
 // ── Pagination (composable) ───────────────────────────────────────────────────
 const PAGE_SIZE = 9;

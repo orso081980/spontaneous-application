@@ -11,6 +11,8 @@ declare interface Company {
   field: string
   website: string
   address: string
+  city: string
+  country: string
   contact: string
   contact_form_url: string
   phone: string
@@ -49,6 +51,7 @@ declare interface JobApplication {
   id: string
   company_id: string
   company_name: string
+  company_country: string
   user_profile_id: string
   position: string
   project_to_suggest: string

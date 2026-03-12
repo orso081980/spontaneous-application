@@ -9,7 +9,7 @@
       <label class="block text-sm font-medium text-gray-700 mb-1"> Filter by application status </label>
       <select :value="modelValue" class="form-input" @change="onChange">
         <option value="">All Statuses</option>
-        <option value="not-applied">Not Applied</option>
+        <option v-if="showNotApplied !== false" value="not-applied">Not Applied</option>
         <option value="created">Created</option>
         <option value="sent">Sent</option>
         <option value="interview">Interview Stage</option>
@@ -28,6 +28,8 @@ defineProps<{
   modelValue: string;
   /** Only render when the user is authenticated. */
   show?: boolean;
+  /** Whether to include the "Not Applied" option (relevant for companies, not applications). */
+  showNotApplied?: boolean;
 }>();
 
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();

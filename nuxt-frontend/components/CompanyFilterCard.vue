@@ -5,7 +5,7 @@
 -->
 <template>
   <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Companies</h2>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ title ?? 'Filter Companies' }}</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <SearchInput
         :model-value="search"
@@ -17,13 +17,13 @@
 
       <CountryFilter :model-value="country" :countries="countries" @update:model-value="onCountryChange" />
 
-      <StatusFilter :model-value="statusFilter" :show="showStatusFilter" @update:model-value="onStatusChange" />
+      <StatusFilter :model-value="statusFilter" :show="showStatusFilter" :show-not-applied="showNotApplied ?? true" @update:model-value="onStatusChange" />
     </div>
 
     <!-- Info row -->
     <div class="mt-4 flex flex-wrap justify-between items-center gap-2">
       <p class="text-sm text-gray-600">
-        Showing {{ totalShowing }} companies
+        Showing {{ totalShowing }} {{ totalLabel ?? 'companies' }}
         <span v-if="totalPages && totalPages > 1"> (Page {{ currentPage }} of {{ totalPages }}) </span>
       </p>
       <button type="button" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium" @click="onClear"> Clear Filters </button>
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 defineProps<{
+  title?: string;
   search: string;
   country: string;
   statusFilter: string;
@@ -40,7 +41,9 @@ defineProps<{
   totalShowing: number;
   currentPage?: number;
   totalPages?: number;
+  totalLabel?: string;
   showStatusFilter: boolean;
+  showNotApplied?: boolean;
 }>();
 
 const emit = defineEmits<{

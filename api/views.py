@@ -142,17 +142,13 @@ def companies_paginated(request):
     # Start with all companies
     companies = Company.objects.all()
     
-    # Apply search filter
+    # Apply search filter — name only (substring match)
     if search_query:
-        companies = companies.filter(
-            Q(name__icontains=search_query) | 
-            Q(field__icontains=search_query)
-        )
+        companies = companies.filter(name__icontains=search_query)
     
     # Apply country filter
     if country_filter:
-        # Filter by exact country match (last word of address)
-        companies = companies.filter(address__iregex=r'\b' + country_filter + r'\b')
+        companies = companies.filter(country__iexact=country_filter)
     
     # Get all companies for initial filtering (before pagination)
     all_companies = list(companies.values('id', 'address'))
@@ -248,42 +244,24 @@ def companies_paginated(request):
 @permission_classes([AllowAny])
 def companies_countries(request):
     """
-    GET: List all unique countries from company addresses
+    GET: List all unique countries from the company country field (with emoji flags).
+    Relies on the stored country field — populated automatically when an address is saved.
     """
-    # Import here to avoid circular imports
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
-    try:
-        from frontend.templatetags.company_filters import COUNTRY_FLAGS
-    except ImportError:
-        # Fallback country flags if import fails
-        COUNTRY_FLAGS = {
-            'luxembourg': '🇱🇺', 'belgium': '🇧🇪', 'france': '🇫🇷', 'germany': '🇩🇪',
-            'netherlands': '🇳🇱', 'uk': '🇬🇧', 'usa': '🇺🇸', 'canada': '🇨🇦'
-        }
-    
-    companies = Company.objects.exclude(address__isnull=True).exclude(address='')
-    countries = set()
-    
-    for company in companies:
-        if company.address:
-            parts = company.address.split(',')
-            if parts:
-                country = parts[-1].strip()
-                if country:
-                    countries.add(country)
-    
-    # Create country list with flags
+    from frontend.templatetags.company_filters import COUNTRY_FLAGS
+
+    countries = (
+        Company.objects
+        .exclude(country__isnull=True)
+        .exclude(country='')
+        .values_list('country', flat=True)
+        .distinct()
+    )
+
     country_list = []
-    for country in sorted(countries):
+    for country in sorted(set(countries)):
         flag = COUNTRY_FLAGS.get(country.lower(), '🌍')
-        country_list.append({
-            'name': country,
-            'flag': flag
-        })
-    
+        country_list.append({'name': country, 'flag': flag})
+
     return Response(country_list)
 
 
